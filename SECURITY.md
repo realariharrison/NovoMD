@@ -17,7 +17,7 @@ We take security vulnerabilities seriously. If you discover a security issue in 
 Instead, please report security issues via one of these methods:
 
 1. **GitHub Security Advisories** (preferred)
-   - Go to the [Security tab](https://github.com/quantnexusai/NovoMD/security)
+   - Go to the [Security tab](https://github.com/realariharrison/NovoMD/security)
    - Click "Report a vulnerability"
    - Provide detailed information about the vulnerability
 
@@ -115,7 +115,7 @@ Please provide as much information as possible:
 
 Subscribe to security advisories:
 - Watch the repository and enable security alerts
-- Check [Security Advisories](https://github.com/quantnexusai/NovoMD/security/advisories)
+- Check [Security Advisories](https://github.com/realariharrison/NovoMD/security/advisories)
 
 ## Disclosure Policy
 

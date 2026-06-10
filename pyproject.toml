@@ -10,7 +10,7 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
-    {name = "NovoMD Contributors"}
+    {name = "NovoMCP"}
 ]
 keywords = [
     "molecular-dynamics",
@@ -67,10 +67,10 @@ rdkit = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/quantnexusai/NovoMD"
-Documentation = "https://github.com/quantnexusai/NovoMD#readme"
-Repository = "https://github.com/quantnexusai/NovoMD.git"
-Issues = "https://github.com/quantnexusai/NovoMD/issues"
+Homepage = "https://github.com/realariharrison/NovoMD"
+Documentation = "https://github.com/realariharrison/NovoMD#readme"
+Repository = "https://github.com/realariharrison/NovoMD.git"
+Issues = "https://github.com/realariharrison/NovoMD/issues"
 
 [project.scripts]
 novomd = "main:run_server"

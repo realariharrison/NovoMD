@@ -282,7 +282,7 @@ with gr.Blocks(title="NovoMD - Molecular Dynamics API") as demo:
 
     **Features:** Geometry analysis, energy calculations, electrostatic properties, surface/volume metrics, and more.
 
-    [GitHub](https://github.com/quantnexusai/NovoMD) | [API Documentation](https://github.com/quantnexusai/NovoMD#api-usage)
+    [GitHub](https://github.com/realariharrison/NovoMD) | [API Documentation](https://github.com/realariharrison/NovoMD#api-usage)
     """
     )
 
@@ -356,7 +356,7 @@ with gr.Blocks(title="NovoMD - Molecular Dynamics API") as demo:
     file generation, deploy the Docker container:
 
     ```bash
-    docker run -d -p 8010:8010 -e NOVOMD_API_KEY="your-key" ghcr.io/quantnexusai/novomd:latest
+    docker run -d -p 8010:8010 -e NOVOMD_API_KEY="your-key" ghcr.io/realariharrison/novomd:latest
     ```
 
     MIT License | Built with FastAPI, RDKit, and Gradio
