@@ -26,14 +26,48 @@ Open-source REST API for molecular dynamics simulations, protein-ligand docking,
 
 ## Tech Stack
 
-- **Framework**: FastAPI
+- **Library**: pure Python core (`pip install novomd`), RDKit + NumPy + SciPy
 - **Molecular Processing**: RDKit, OpenBabel (optional)
-- **Chemistry**: BioPython
+- **Service**: FastAPI (`novomd[server]`)
 - **Deployment**: Docker, Docker Compose
 
 ## Quick Start
 
-### Using Pre-built Docker Image (Fastest)
+### Python library (local, no server)
+
+Install from PyPI and compute descriptors on your own machine. No account, no API key, no network call.
+
+```bash
+pip install novomd
+```
+
+```python
+from novomd import calculate_properties
+
+props = calculate_properties("CCO")
+print(props["molecular_weight"])   # 46.07
+print(props["radius_of_gyration"])
+```
+
+From the command line:
+
+```bash
+novomd props "CCO"
+novomd props "CC(=O)OC1=CC=CC=C1C(=O)O" --compact
+```
+
+RDKit, NumPy, and SciPy install automatically as dependencies. The calculation runs entirely on your hardware.
+
+### Run the REST service
+
+The same core is available as a FastAPI service for networked or containerized use.
+
+```bash
+pip install "novomd[server]"
+uvicorn main:app --host 0.0.0.0 --port 8010
+```
+
+### Using the pre-built Docker image
 
 ```bash
 # Pull and run the latest image
