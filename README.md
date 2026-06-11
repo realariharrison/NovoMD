@@ -153,6 +153,25 @@ novomd explain "CCO" --json
 
 This describes a molecule using public cheminformatics (logP, TPSA, QED, Lipinski, Veber). It does not predict ADMET, pKa, solubility, or binding. That boundary is deliberate.
 
+## Reports
+
+Roll identity, drug-likeness, and the summary into a one-page report. Markdown for a PR or a notebook, HTML (with a 2D structure depiction) to share, or JSON for a pipeline.
+
+```python
+from novomd import generate_report
+
+generate_report("CCO")                      # markdown (default)
+generate_report("CCO", fmt="html")          # styled HTML with a 2D depiction
+generate_report("CCO", fmt="json")          # machine-readable
+```
+
+```bash
+novomd report "CC(=O)OC1=CC=CC=C1C(=O)O" --out aspirin.html
+novomd report "CCO" --format json
+```
+
+The format is inferred from the `--out` extension (`.md` / `.html` / `.json`), or set it with `--format`.
+
 ## REST API
 
 All endpoints except `/health` require an API key in the `X-API-Key` header.

@@ -53,6 +53,9 @@ def _render_panel(color: bool) -> str:
    {bold}explain{reset}   drug-likeness and a plain-language summary
              {dim}novomd explain "CCO"{reset}
 
+   {bold}report{reset}    a one-page report (markdown, html, or json)
+             {dim}novomd report "CCO" --out report.md{reset}
+
    {bold}batch{reset}     many molecules, one pass
              {dim}novomd batch mols.smi --out results.csv{reset}
 
@@ -113,6 +116,33 @@ def _cmd_explain(args: argparse.Namespace) -> int:
     print(f"  Veber      {'passes' if not veber else ', '.join(veber)}")
     print()
     print(summarize(data))
+    return 0
+
+
+def _cmd_report(args: argparse.Namespace) -> int:
+    from .report import generate_report
+
+    fmt = args.format
+    if fmt is None:
+        if args.out and args.out.lower().endswith(".html"):
+            fmt = "html"
+        elif args.out and args.out.lower().endswith(".json"):
+            fmt = "json"
+        else:
+            fmt = "markdown"
+
+    try:
+        content = generate_report(args.smiles, fmt=fmt)
+    except NovoMDError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    if args.out:
+        with open(args.out, "w", encoding="utf-8") as handle:
+            handle.write(content)
+        print(f"wrote {args.out}", file=sys.stderr)
+    else:
+        print(content)
     return 0
 
 
@@ -217,6 +247,18 @@ def build_parser() -> argparse.ArgumentParser:
     explain.add_argument("smiles", help="SMILES string, e.g. 'CCO'")
     explain.add_argument("--json", action="store_true", help="Emit JSON instead of a table.")
     explain.set_defaults(func=_cmd_explain)
+
+    report = subparsers.add_parser(
+        "report", help="Generate a one-page molecular report for one SMILES."
+    )
+    report.add_argument("smiles", help="SMILES string, e.g. 'CCO'")
+    report.add_argument("--out", help="Write to this file (format inferred from .md/.html/.json).")
+    report.add_argument(
+        "--format",
+        choices=["markdown", "html", "json"],
+        help="Override the output format (default: inferred from --out, else markdown).",
+    )
+    report.set_defaults(func=_cmd_report)
 
     batch = subparsers.add_parser(
         "batch", help="Compute descriptors for many SMILES from a .smi file."

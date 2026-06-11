@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-11
+
+### Added
+- One-page molecular report: `generate_report(smiles, fmt)` renders Markdown,
+  HTML (with a 2D structure depiction and brand styling), or JSON, combining
+  identity, drug-likeness, and the summary.
+- `novomd report "<smiles>" --out report.md` (format inferred from the
+  extension, or `--format`).
+
 ## [1.3.0] - 2026-06-11
 
 ### Added
@@ -96,7 +105,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BioPython 1.81
 - Optional: RDKit, OpenBabel
 
-[Unreleased]: https://github.com/realariharrison/NovoMD/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/realariharrison/NovoMD/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/realariharrison/NovoMD/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/realariharrison/NovoMD/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/realariharrison/NovoMD/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/realariharrison/NovoMD/compare/v1.1.0...v1.2.0
