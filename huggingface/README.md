@@ -39,13 +39,13 @@ Calculate **32+ molecular properties** from SMILES strings using real 3D coordin
 For programmatic access, deploy the full API:
 
 ```bash
-docker run -d -p 8010:8010 -e NOVOMD_API_KEY="your-key" ghcr.io/quantnexusai/novomd:latest
+docker run -d -p 8010:8010 -e NOVOMD_API_KEY="your-key" ghcr.io/realariharrison/novomd:latest
 ```
 
 ## Links
 
-- [GitHub Repository](https://github.com/quantnexusai/NovoMD)
-- [API Documentation](https://github.com/quantnexusai/NovoMD#api-usage)
+- [GitHub Repository](https://github.com/realariharrison/NovoMD)
+- [API Documentation](https://github.com/realariharrison/NovoMD#api-usage)
 
 ## License
 

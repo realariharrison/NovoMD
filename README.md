@@ -1,6 +1,6 @@
 # NovoMD - Molecular Dynamics API
 
-[![CI](https://github.com/quantnexusai/NovoMD/actions/workflows/ci.yml/badge.svg)](https://github.com/quantnexusai/NovoMD/actions/workflows/ci.yml)
+[![CI](https://github.com/realariharrison/NovoMD/actions/workflows/ci.yml/badge.svg)](https://github.com/realariharrison/NovoMD/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-009688.svg)](https://fastapi.tiangolo.com)
@@ -41,7 +41,7 @@ docker run -d \
   -p 8010:8010 \
   -e NOVOMD_API_KEY="your-secure-api-key" \
   --name novomd \
-  ghcr.io/quantnexusai/novomd:latest
+  ghcr.io/realariharrison/novomd:latest
 
 # Test the service
 curl http://localhost:8010/health
@@ -53,7 +53,7 @@ Available tags: `latest`, `main`, `v1.1.0`, `v1.1`, `v1`
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/quantnexusai/NovoMD.git
+   git clone https://github.com/realariharrison/NovoMD.git
    cd NovoMD
    ```
 
@@ -375,9 +375,9 @@ If you use NovoMD in your research, please cite:
 ```bibtex
 @software{novomd2025,
   title = {NovoMD: Open-Source Molecular Dynamics API},
-  author = {QuantNexus AI},
+  author = {NovoMCP},
   year = {2025},
-  url = {https://github.com/quantnexusai/NovoMD}
+  url = {https://github.com/realariharrison/NovoMD}
 }
 ```
 
@@ -389,9 +389,9 @@ If you use NovoMD in your research, please cite:
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/quantnexusai/NovoMD/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/quantnexusai/NovoMD/discussions)
+- **Issues**: [GitHub Issues](https://github.com/realariharrison/NovoMD/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/realariharrison/NovoMD/discussions)
 
 ---
 
-Made with ❤️ by the QuantNexus AI team
+Made with ❤️ by the NovoMCP team

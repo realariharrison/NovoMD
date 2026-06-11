@@ -88,7 +88,7 @@ All molecular properties must:
 
 ### Reporting Bugs
 
-1. Check if the bug has already been reported in [Issues](https://github.com/quantnexusai/NovoMD/issues)
+1. Check if the bug has already been reported in [Issues](https://github.com/realariharrison/NovoMD/issues)
 2. If not, create a new issue with:
    - Clear, descriptive title
    - Steps to reproduce
@@ -98,7 +98,7 @@ All molecular properties must:
 
 ### Suggesting Features
 
-1. Check if the feature has been requested in [Issues](https://github.com/quantnexusai/NovoMD/issues)
+1. Check if the feature has been requested in [Issues](https://github.com/realariharrison/NovoMD/issues)
 2. Create a new issue with:
    - Clear description of the feature
    - Use case and motivation
@@ -262,7 +262,7 @@ Maintainers will handle releases following semantic versioning:
 ## Questions?
 
 - Open an issue for general questions
-- Use [Discussions](https://github.com/quantnexusai/NovoMD/discussions) for broader topics
+- Use [Discussions](https://github.com/realariharrison/NovoMD/discussions) for broader topics
 - Tag maintainers if urgent: @maintainer-username
 
 ## License
