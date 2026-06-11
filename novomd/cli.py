@@ -9,14 +9,52 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TextIO
 
 from .__about__ import __version__
 from .exceptions import NovoMDError
 
 # Property fields that are per-atom lists; omitted from flat CSV output.
 _LIST_FIELDS = {"coords_x", "coords_y", "coords_z", "atom_types", "bonds"}
+
+# Brand terracotta (#B8704B) as a 24-bit ANSI color, used only on a TTY.
+_TERRACOTTA = "\x1b[38;2;184;112;75m"
+_BOLD = "\x1b[1m"
+_DIM = "\x1b[2m"
+_RESET = "\x1b[0m"
+
+
+def _supports_color(stream: TextIO) -> bool:
+    """Color only when writing to a real terminal and not opted out."""
+    return (
+        hasattr(stream, "isatty")
+        and stream.isatty()
+        and os.environ.get("NO_COLOR") is None
+        and os.environ.get("TERM") != "dumb"
+    )
+
+
+def _render_panel(color: bool) -> str:
+    """The designed presentation shown for a bare ``novomd`` invocation."""
+    terra = _TERRACOTTA if color else ""
+    bold = _BOLD if color else ""
+    dim = _DIM if color else ""
+    reset = _RESET if color else ""
+    return f"""
+ {terra}MOLECULAR PROPERTY CALCULATOR{reset}
+
+ {terra}{bold}novomd{reset}  ·  v{__version__}
+
+   {bold}props{reset}   descriptors for one molecule
+           {dim}novomd props "CCO"{reset}
+
+   {bold}batch{reset}   many molecules, one pass
+           {dim}novomd batch mols.smi --out results.csv{reset}
+
+ {dim}local-first · open source · novomcp.com{reset}
+"""
 
 
 def _cmd_props(args: argparse.Namespace) -> int:
@@ -115,11 +153,13 @@ def _cmd_batch(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="novomd",
-        description="Local-first molecular property calculator.",
+        description="novomd · local-first molecular property calculation",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"novomd {__version__}")
 
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    # Not required: a bare `novomd` shows the panel instead of an argparse error.
+    subparsers = parser.add_subparsers(dest="command", required=False, metavar="<command>")
 
     props = subparsers.add_parser("props", help="Compute descriptors for one SMILES string.")
     props.add_argument("smiles", help="SMILES string, e.g. 'CCO'")
@@ -149,6 +189,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if getattr(args, "command", None) is None:
+        # Bare `novomd`: show the designed panel rather than erroring.
+        print(_render_panel(_supports_color(sys.stdout)))
+        return 0
     exit_code: int = args.func(args)
     return exit_code
 
