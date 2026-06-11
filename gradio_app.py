@@ -274,17 +274,15 @@ def process_molecule(smiles: str, force_field: str):
 # Create Gradio interface
 with gr.Blocks(title="NovoMD - Molecular Dynamics API") as demo:
 
-    gr.Markdown(
-        """
+    gr.Markdown("""
     # NovoMD - Molecular Dynamics API
 
     Calculate 32+ molecular properties from SMILES strings using real 3D coordinate optimization.
 
     **Features:** Geometry analysis, energy calculations, electrostatic properties, surface/volume metrics, and more.
 
-    [GitHub](https://github.com/quantnexusai/NovoMD) | [API Documentation](https://github.com/quantnexusai/NovoMD#api-usage)
-    """
-    )
+    [GitHub](https://github.com/realariharrison/NovoMD) | [API Documentation](https://github.com/realariharrison/NovoMD#api-usage)
+    """)
 
     with gr.Row():
         with gr.Column(scale=1):
@@ -345,8 +343,7 @@ with gr.Blocks(title="NovoMD - Molecular Dynamics API") as demo:
         outputs=[molecule_image, properties_output, json_output, error_output],
     )
 
-    gr.Markdown(
-        """
+    gr.Markdown("""
     ---
 
     **About NovoMD**
@@ -356,12 +353,11 @@ with gr.Blocks(title="NovoMD - Molecular Dynamics API") as demo:
     file generation, deploy the Docker container:
 
     ```bash
-    docker run -d -p 8010:8010 -e NOVOMD_API_KEY="your-key" ghcr.io/quantnexusai/novomd:latest
+    docker run -d -p 8010:8010 -e NOVOMD_API_KEY="your-key" ghcr.io/realariharrison/novomd:latest
     ```
 
     MIT License | Built with FastAPI, RDKit, and Gradio
-    """
-    )
+    """)
 
 
 if __name__ == "__main__":
