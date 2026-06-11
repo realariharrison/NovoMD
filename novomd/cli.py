@@ -47,11 +47,14 @@ def _render_panel(color: bool) -> str:
 
  {terra}{bold}novomd{reset}  ·  v{__version__}
 
-   {bold}props{reset}   descriptors for one molecule
-           {dim}novomd props "CCO"{reset}
+   {bold}props{reset}     descriptors for one molecule
+             {dim}novomd props "CCO"{reset}
 
-   {bold}batch{reset}   many molecules, one pass
-           {dim}novomd batch mols.smi --out results.csv{reset}
+   {bold}explain{reset}   drug-likeness and a plain-language summary
+             {dim}novomd explain "CCO"{reset}
+
+   {bold}batch{reset}     many molecules, one pass
+             {dim}novomd batch mols.smi --out results.csv{reset}
 
  {dim}local-first · open source · novomcp.com{reset}
 """
@@ -72,6 +75,44 @@ def _cmd_props(args: argparse.Namespace) -> int:
 
     indent = None if args.compact else 2
     print(json.dumps(result, indent=indent))
+    return 0
+
+
+def _cmd_explain(args: argparse.Namespace) -> int:
+    from .interpret import calculate_druglikeness, summarize
+
+    try:
+        data = calculate_druglikeness(args.smiles)
+    except NovoMDError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(json.dumps({**data, "summary": summarize(data)}, indent=2))
+        return 0
+
+    rows = [
+        ("molecular weight", data["molecular_weight"]),
+        ("logP", data["logp"]),
+        ("TPSA", data["tpsa"]),
+        ("H-bond donors", data["h_bond_donors"]),
+        ("H-bond acceptors", data["h_bond_acceptors"]),
+        ("rotatable bonds", data["rotatable_bonds"]),
+        ("aromatic rings", data["aromatic_rings"]),
+        ("fraction sp3", data["fraction_csp3"]),
+        ("QED", data["qed"]),
+    ]
+    print(data["smiles"])
+    print()
+    for label, value in rows:
+        print(f"  {label:<18} {value}")
+    print()
+    lipinski = data["lipinski"]["violations"]
+    print(f"  Lipinski   {'no violations' if not lipinski else ', '.join(lipinski)}")
+    veber = data["veber"]["violations"]
+    print(f"  Veber      {'passes' if not veber else ', '.join(veber)}")
+    print()
+    print(summarize(data))
     return 0
 
 
@@ -169,6 +210,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--compact", action="store_true", help="Emit single-line JSON instead of indented."
     )
     props.set_defaults(func=_cmd_props)
+
+    explain = subparsers.add_parser(
+        "explain", help="Drug-likeness and a plain-language summary for one SMILES."
+    )
+    explain.add_argument("smiles", help="SMILES string, e.g. 'CCO'")
+    explain.add_argument("--json", action="store_true", help="Emit JSON instead of a table.")
+    explain.set_defaults(func=_cmd_explain)
 
     batch = subparsers.add_parser(
         "batch", help="Compute descriptors for many SMILES from a .smi file."

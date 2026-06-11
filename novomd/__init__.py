@@ -23,6 +23,7 @@ from .core import (
     smiles_to_pdb,
 )
 from .exceptions import InvalidSMILESError, NovoMDError, RDKitNotAvailableError
+from .interpret import calculate_druglikeness, interpret, summarize
 
 __all__ = [
     "__version__",
@@ -30,6 +31,9 @@ __all__ = [
     "calculate_properties",
     "calculate_properties_batch",
     "MAX_BATCH_SIZE",
+    "calculate_druglikeness",
+    "summarize",
+    "interpret",
     "calculate_all_molecular_properties",
     "calculate_partial_charges",
     "extract_coordinates_from_pdb",

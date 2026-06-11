@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-11
+
+### Added
+- Interpretation layer: `calculate_druglikeness()` computes the standard
+  medicinal-chemistry descriptors (logP, TPSA, H-bond donors/acceptors,
+  rotatable bonds, aromatic rings, fraction sp3, QED) and the Lipinski and
+  Veber rule-of-thumb checks.
+- `summarize()` renders a plain-language profile; `interpret()` returns both.
+- `novomd explain "<smiles>"` prints the drug-likeness table and summary
+  (`--json` for machine output).
+
 ## [1.2.1] - 2026-06-11
 
 ### Added
@@ -85,7 +96,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BioPython 1.81
 - Optional: RDKit, OpenBabel
 
-[Unreleased]: https://github.com/realariharrison/NovoMD/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/realariharrison/NovoMD/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/realariharrison/NovoMD/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/realariharrison/NovoMD/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/realariharrison/NovoMD/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/realariharrison/NovoMD/compare/v1.0.0...v1.1.0

@@ -124,6 +124,35 @@ calculate_properties_batch(["CCO", "C"], max_batch_size=1000)
 
 Both raise `InvalidSMILESError` for unparseable input and `RDKitNotAvailableError` if RDKit is missing. The batch function isolates per-item failures instead of raising.
 
+## Interpretation
+
+Beyond raw numbers, NovoMD reads a molecule's profile: the standard medicinal-chemistry descriptors and the textbook rule-of-thumb checks, with a plain-language summary.
+
+```python
+from novomd import calculate_druglikeness, summarize, interpret
+
+d = calculate_druglikeness("CC(=O)OC1=CC=CC=C1C(=O)O")   # aspirin
+d["logp"], d["tpsa"], d["qed"]            # 1.31, 63.6, 0.55
+d["lipinski"]["violations"]              # []
+d["veber"]["passes"]                     # True
+
+summarize(d)
+# "A small, moderately lipophilic molecule (MW 180.16, logP 1.31).
+#  Satisfies Lipinski's rule of five with no violations. Meets the Veber
+#  criteria (TPSA 63.6, 2 rotatable bonds). QED 0.55 (moderate drug-likeness)."
+
+interpret("CCO")   # the descriptors plus a "summary" key, in one call
+```
+
+From the command line:
+
+```bash
+novomd explain "CC(=O)OC1=CC=CC=C1C(=O)O"
+novomd explain "CCO" --json
+```
+
+This describes a molecule using public cheminformatics (logP, TPSA, QED, Lipinski, Veber). It does not predict ADMET, pKa, solubility, or binding. That boundary is deliberate.
+
 ## REST API
 
 All endpoints except `/health` require an API key in the `X-API-Key` header.
