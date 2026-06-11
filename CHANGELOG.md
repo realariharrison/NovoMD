@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-06-11
+
+### Added
+- Designed CLI presentation: a bare `novomd` now shows a branded panel (with a
+  terracotta accent on a terminal, plain text when piped) instead of an
+  argparse error.
+
+## [1.2.0] - 2026-06-11
+
+### Added
+- Importable `novomd` library: `calculate_properties()` computes the full
+  descriptor set locally from a SMILES string, with no server and no API key.
+- Batch processing with per-item error isolation: `calculate_properties_batch()`
+  and a `POST /batch` endpoint (capped at 1,000 molecules per call).
+- `novomd` command-line interface (`novomd props`, `novomd batch`).
+- PyPI packaging with a `[server]` extra; published via Trusted Publishing.
+- Sample descriptor dataset under `datasets/` as an open give-back.
+
+### Changed
+- The FastAPI service now imports the shared framework-free core rather than
+  redefining the calculation logic.
+- README rewritten around the local-first library, with a brand release card.
+
 ## [1.1.0] - 2025-01-08
 
 ### Added
@@ -62,6 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BioPython 1.81
 - Optional: RDKit, OpenBabel
 
-[Unreleased]: https://github.com/realariharrison/NovoMD/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/realariharrison/NovoMD/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/realariharrison/NovoMD/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/realariharrison/NovoMD/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/realariharrison/NovoMD/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/realariharrison/NovoMD/releases/tag/v1.0.0
