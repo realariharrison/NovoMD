@@ -16,6 +16,7 @@ def test_bare_invocation_shows_panel(capsys):
     assert "MOLECULAR PROPERTY CALCULATOR" in out
     assert "props" in out
     assert "explain" in out
+    assert "report" in out
     assert "batch" in out
     assert "novomcp.com" in out
     assert __version__ in out

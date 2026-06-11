@@ -24,6 +24,7 @@ from .core import (
 )
 from .exceptions import InvalidSMILESError, NovoMDError, RDKitNotAvailableError
 from .interpret import calculate_druglikeness, interpret, summarize
+from .report import generate_report
 
 __all__ = [
     "__version__",
@@ -34,6 +35,7 @@ __all__ = [
     "calculate_druglikeness",
     "summarize",
     "interpret",
+    "generate_report",
     "calculate_all_molecular_properties",
     "calculate_partial_charges",
     "extract_coordinates_from_pdb",
