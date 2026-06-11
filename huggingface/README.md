@@ -7,45 +7,52 @@ sdk: docker
 app_port: 7860
 pinned: false
 license: mit
-short_description: Calculate 32+ molecular properties from SMILES
+short_description: Molecular properties, drug-likeness, and reports from SMILES
 tags:
   - chemistry
-  - molecular-dynamics
+  - cheminformatics
   - rdkit
   - drug-discovery
-  - bioinformatics
+  - mcp
   - computational-chemistry
 ---
 
-# NovoMD - Molecular Dynamics API
+# NovoMD - Molecular Property Calculator
 
-Calculate **32+ molecular properties** from SMILES strings using real 3D coordinate optimization.
+Calculate molecular properties and drug-likeness from SMILES strings, powered by
+the open-source [`novomd`](https://pypi.org/project/novomd/) package. The package
+is the single source of truth, so this Space, the CLI, and the library all return
+identical results.
 
 ## Features
 
-- **Geometry Properties**: Radius of gyration, asphericity, eccentricity, span
-- **Energy Calculations**: Conformer energy, VDW, electrostatic, strain energies
-- **Electrostatic Properties**: Dipole moment, partial charges, charge distribution
-- **Surface/Volume**: SASA, molecular volume, globularity
+- **Geometry**: radius of gyration, asphericity, eccentricity, span
+- **Energy estimates**: conformer energy, VDW, electrostatic, strain
+- **Electrostatics**: dipole moment, partial charges
+- **Surface/volume**: SASA, molecular volume, globularity
+- **Drug-likeness**: logP, TPSA, QED, Lipinski, Veber
 
-## Usage
+This describes molecules with public cheminformatics. It does not predict ADMET,
+pKa, solubility, or binding. For predictive work, see NovoMCP.
 
-1. Enter a SMILES string (e.g., `CCO` for ethanol, `c1ccccc1` for benzene)
-2. Select a force field
-3. Click "Calculate Properties"
+## MCP tools (for AI assistants)
 
-## API Access
+This Space is also a Model Context Protocol server. Tools:
 
-For programmatic access, deploy the full API:
+- `molecular_properties(smiles)` — 32+ 3D descriptors
+- `drug_likeness(smiles)` — logP, TPSA, QED, Lipinski, Veber, plus a summary
+- `molecular_report(smiles, output_format)` — a one-page report (markdown/html/json)
+
+## Use the package directly
 
 ```bash
-docker run -d -p 8010:8010 -e NOVOMD_API_KEY="your-key" ghcr.io/realariharrison/novomd:latest
+pip install novomd
 ```
 
 ## Links
 
+- [PyPI](https://pypi.org/project/novomd/)
 - [GitHub Repository](https://github.com/realariharrison/NovoMD)
-- [API Documentation](https://github.com/realariharrison/NovoMD#api-usage)
 
 ## License
 

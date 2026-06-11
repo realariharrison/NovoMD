@@ -11,8 +11,9 @@ RUN conda create -n novomd python=3.11 -y && \
     scipy \
     && conda clean -afy
 
-# Install Gradio with MCP support
-RUN conda run -n novomd pip install --no-cache-dir "gradio[mcp]>=5.32.0"
+# Install Gradio with MCP support and the novomd package. rdkit/numpy/scipy are
+# already provided by conda above and satisfy novomd's requirements.
+RUN conda run -n novomd pip install --no-cache-dir "gradio[mcp]>=5.32.0" "novomd>=1.4.0"
 
 # Copy application files
 COPY app.py .
