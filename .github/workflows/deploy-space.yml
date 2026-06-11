@@ -1,0 +1,42 @@
+name: Deploy HF Space
+
+# Syncs the contents of `huggingface/` to the Hugging Face Space
+# (quantnexusai/novomd) whenever they change on main. Requires an `HF_TOKEN`
+# repository secret: a fine-grained token with write access to that Space.
+
+on:
+  push:
+    branches: [main]
+    paths: ['huggingface/**']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install huggingface_hub
+        run: pip install "huggingface_hub>=0.24"
+
+      - name: Sync huggingface/ to the Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          info = api.upload_folder(
+              folder_path="huggingface",
+              repo_id="quantnexusai/novomd",
+              repo_type="space",
+              commit_message="Sync from GitHub main",
+          )
+          print(f"Synced to Space: {info}")
+          PY
