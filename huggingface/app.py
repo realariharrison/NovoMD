@@ -1,22 +1,28 @@
 """
-NovoMD Gradio Interface for Hugging Face Spaces
-A user-friendly web interface for molecular dynamics calculations.
+NovoMD Gradio interface and MCP server for Hugging Face Spaces.
+
+A thin layer over the open-source ``novomd`` package: the same calculations that
+``pip install novomd`` performs, exposed as a web UI and as MCP tools so AI
+assistants can query them directly. The package is the single source of truth,
+so the UI, the CLI, PyPI, and these MCP tools all return identical results.
 """
 
 import json
 
 import gradio as gr
 
-# Import directly from the main module to avoid HTTP overhead
+from novomd import __version__, calculate_properties, generate_report, interpret
+from novomd.exceptions import NovoMDError
+
 try:
     from rdkit import Chem
-    from rdkit.Chem import AllChem, Descriptors, Draw
+    from rdkit.Chem import Draw
 
     RDKIT_AVAILABLE = True
 except ImportError:
     RDKIT_AVAILABLE = False
 
-# Force field options
+# Force field options (affects the OpenMD output only, not property values)
 FORCE_FIELDS = [
     ("AMBER14 - Recommended for proteins", "amber14"),
     ("AMBER99SB - Well-tested protein force field", "amber99sb"),
@@ -35,9 +41,59 @@ EXAMPLES = [
 ]
 
 
-def process_molecule(smiles: str, force_field: str):
-    """Process a SMILES string and return molecular properties."""
+def _properties_markdown(p: dict, force_field: str) -> str:
+    return f"""
+## Molecular Properties
 
+### Basic Information
+| Property | Value |
+|----------|-------|
+| SMILES | `{p['smiles']}` |
+| Molecular Weight | {p['molecular_weight']:.2f} Da |
+| Total Atoms (with H) | {p['num_atoms_with_h']} |
+| Heavy Atoms | {p['num_heavy_atoms']} |
+| Force Field | {force_field} |
+
+### Geometry
+| Property | Value |
+|----------|-------|
+| Radius of Gyration | {p['radius_of_gyration']:.3f} Å |
+| Asphericity | {p['asphericity']:.3f} |
+| Eccentricity | {p['eccentricity']:.3f} |
+| Span (max distance) | {p['span_r']:.3f} Å |
+
+### Surface & Volume
+| Property | Value |
+|----------|-------|
+| SASA | {p['sasa']:.2f} Å² |
+| Molecular Volume | {p['molecular_volume']:.2f} Å³ |
+| Globularity | {p['globularity']:.3f} |
+| Surface/Volume Ratio | {p['surface_to_volume_ratio']:.3f} |
+
+### Energy (estimates)
+| Property | Value |
+|----------|-------|
+| Conformer Energy | {p['conformer_energy']:.2f} |
+| VDW Energy | {p['vdw_energy']:.2f} |
+| Electrostatic Energy | {p['electrostatic_energy']:.2f} |
+| Torsion Strain | {p['torsion_strain']:.2f} |
+| Angle Strain | {p['angle_strain']:.2f} |
+
+### Electrostatics
+| Property | Value |
+|----------|-------|
+| Dipole Moment | {p['dipole_moment']:.3f} |
+| Total Charge | {p['total_charge']:.4f} |
+| Max Partial Charge | {p['max_partial_charge']:.4f} |
+| Min Partial Charge | {p['min_partial_charge']:.4f} |
+| Charge Span | {p['charge_span']:.4f} |
+
+*Full 3D coordinates available in the JSON output below.*
+"""
+
+
+def process_molecule(smiles: str, force_field: str):
+    """UI handler: returns a 2D image, a properties table, JSON, and any error."""
     if not smiles or not smiles.strip():
         return None, "Please enter a valid SMILES string.", "", ""
 
@@ -47,241 +103,81 @@ def process_molecule(smiles: str, force_field: str):
         return None, "RDKit is not available. Please check the installation.", "", ""
 
     try:
-        # Parse SMILES
-        mol = Chem.MolFromSmiles(smiles)
-        if mol is None:
-            return None, f"Invalid SMILES string: '{smiles}'", "", ""
+        props = calculate_properties(smiles)
+    except NovoMDError as exc:
+        return None, f"Error processing molecule: {exc}", "", str(exc)
 
-        # Add hydrogens and generate 3D coordinates
-        mol = Chem.AddHs(mol)
+    mol_2d = Chem.MolFromSmiles(smiles)
+    img = Draw.MolToImage(mol_2d, size=(400, 300)) if mol_2d else None
 
-        # Generate 3D conformer
-        result = AllChem.EmbedMolecule(mol, randomSeed=42)
-        if result == -1:
-            return None, "Failed to generate 3D coordinates for this molecule.", "", ""
+    properties_md = _properties_markdown(props, force_field)
+    json_output = json.dumps({"success": True, "force_field": force_field, **props}, indent=2)
+    return img, properties_md, json_output, ""
 
-        # Optimize geometry
-        AllChem.MMFFOptimizeMolecule(mol, maxIters=200)
 
-        # Get conformer for calculations
-        conf = mol.GetConformer()
-        positions = conf.GetPositions()
+# ---------------------------------------------------------------------------
+# MCP tools — exposed to AI assistants. Each delegates to the novomd package,
+# so the tools return exactly what the library and CLI return.
+# ---------------------------------------------------------------------------
 
-        # Calculate properties
-        import numpy as np
-        from scipy.spatial.distance import pdist
 
-        # Basic counts
-        num_atoms_with_h = mol.GetNumAtoms()
-        num_heavy_atoms = Chem.RemoveHs(mol).GetNumAtoms()
-        molecular_weight = Descriptors.MolWt(mol)
+def molecular_properties(smiles: str) -> dict:
+    """Compute 32+ 3D molecular descriptors for a SMILES string.
 
-        # Geometry calculations
-        centroid = np.mean(positions, axis=0)
-        centered = positions - centroid
-        rg = np.sqrt(np.mean(np.sum(centered**2, axis=1)))
+    Returns geometry (radius of gyration, asphericity, eccentricity, span,
+    principal moments), an energy estimate, electrostatics (dipole, partial
+    charges), surface and volume metrics, atom and bond counts, and the 3D
+    coordinates. Computed locally with the open-source novomd package.
 
-        # Inertia tensor for shape
-        inertia = np.zeros((3, 3))
-        for pos in centered:
-            inertia += np.eye(3) * np.dot(pos, pos) - np.outer(pos, pos)
-        eigenvalues = np.sort(np.linalg.eigvalsh(inertia))[::-1]
+    Args:
+        smiles: The molecule as a SMILES string, e.g. "CCO".
+    """
+    return calculate_properties(smiles)
 
-        asphericity = eigenvalues[0] - 0.5 * (eigenvalues[1] + eigenvalues[2])
-        eccentricity = np.sqrt(1 - (eigenvalues[2] / eigenvalues[0])) if eigenvalues[0] > 0 else 0
 
-        # Span (max distance between atoms)
-        if len(positions) > 1:
-            distances = pdist(positions)
-            span_r = np.max(distances)
-        else:
-            span_r = 0.0
+def drug_likeness(smiles: str) -> dict:
+    """Assess the drug-likeness of a SMILES string.
 
-        # Surface area and volume estimates
-        sasa = 4 * np.pi * (rg + 1.4) ** 2  # Approximate with probe radius
-        mol_volume = (4 / 3) * np.pi * rg**3
-        globularity = (np.pi ** (1 / 3) * (6 * mol_volume) ** (2 / 3)) / sasa if sasa > 0 else 0
-        surface_to_volume = sasa / mol_volume if mol_volume > 0 else 0
+    Returns molecular weight, logP, TPSA, H-bond donor/acceptor counts,
+    rotatable bonds, aromatic rings, fraction sp3, QED, the Lipinski (rule of
+    five) and Veber verdicts, and a plain-language summary.
 
-        # Energy calculations using MMFF
-        ff = AllChem.MMFFGetMoleculeForceField(mol, AllChem.MMFFGetMoleculeProperties(mol))
-        if ff:
-            conformer_energy = ff.CalcEnergy()
-            vdw_energy = conformer_energy * 0.4  # Approximate breakdown
-            electrostatic_energy = conformer_energy * 0.3
-            torsion_strain = conformer_energy * 0.2
-            angle_strain = conformer_energy * 0.1
-        else:
-            conformer_energy = vdw_energy = electrostatic_energy = 0.0
-            torsion_strain = angle_strain = 0.0
+    This describes a molecule using public cheminformatics. It does not predict
+    ADMET, pKa, solubility, or binding. For predictive work, see NovoMCP
+    (novomcp.com).
 
-        # Partial charges
-        AllChem.ComputeGasteigerCharges(mol)
-        charges = [
-            float(mol.GetAtomWithIdx(i).GetProp("_GasteigerCharge"))
-            for i in range(mol.GetNumAtoms())
-            if not np.isnan(float(mol.GetAtomWithIdx(i).GetProp("_GasteigerCharge")))
-        ]
+    Args:
+        smiles: The molecule as a SMILES string, e.g. "CCO".
+    """
+    return interpret(smiles)
 
-        if charges:
-            max_charge = max(charges)
-            min_charge = min(charges)
-            charge_span = max_charge - min_charge
-            total_charge = sum(charges)
-        else:
-            max_charge = min_charge = charge_span = total_charge = 0.0
 
-        # Dipole moment estimate
-        dipole = np.zeros(3)
-        for i, pos in enumerate(positions):
-            if i < len(charges):
-                dipole += charges[i] * pos
-        dipole_moment = np.linalg.norm(dipole) * 4.803  # Convert to Debye
+def molecular_report(smiles: str, output_format: str = "markdown") -> str:
+    """Generate a one-page molecular report for a SMILES string.
 
-        # Extract 3D coordinates
-        coords_x = [round(pos[0], 4) for pos in positions]
-        coords_y = [round(pos[1], 4) for pos in positions]
-        coords_z = [round(pos[2], 4) for pos in positions]
+    Combines identity, drug-likeness, and a summary.
 
-        # Extract atom types (element symbols)
-        atom_types = [mol.GetAtomWithIdx(i).GetSymbol() for i in range(mol.GetNumAtoms())]
-
-        # Extract bond connectivity
-        bonds = []
-        for bond in mol.GetBonds():
-            bonds.append(
-                {
-                    "begin_atom_idx": bond.GetBeginAtomIdx(),
-                    "end_atom_idx": bond.GetEndAtomIdx(),
-                    "bond_type": str(bond.GetBondType()),
-                }
-            )
-
-        # Generate 2D image
-        mol_2d = Chem.MolFromSmiles(smiles)
-        if mol_2d:
-            img = Draw.MolToImage(mol_2d, size=(400, 300))
-        else:
-            img = None
-
-        # Format properties as markdown table
-        properties_md = f"""
-## Molecular Properties
-
-### Basic Information
-| Property | Value |
-|----------|-------|
-| SMILES | `{smiles}` |
-| Molecular Weight | {molecular_weight:.2f} Da |
-| Total Atoms (with H) | {num_atoms_with_h} |
-| Heavy Atoms | {num_heavy_atoms} |
-| Force Field | {force_field} |
-
-### Geometry Properties
-| Property | Value |
-|----------|-------|
-| Radius of Gyration | {rg:.3f} Å |
-| Asphericity | {asphericity:.3f} |
-| Eccentricity | {eccentricity:.3f} |
-| Span (max distance) | {span_r:.3f} Å |
-
-### Surface & Volume
-| Property | Value |
-|----------|-------|
-| SASA | {sasa:.2f} Å² |
-| Molecular Volume | {mol_volume:.2f} Å³ |
-| Globularity | {globularity:.3f} |
-| Surface/Volume Ratio | {surface_to_volume:.3f} |
-
-### Energy Properties
-| Property | Value |
-|----------|-------|
-| Conformer Energy | {conformer_energy:.2f} kcal/mol |
-| VDW Energy | {vdw_energy:.2f} kcal/mol |
-| Electrostatic Energy | {electrostatic_energy:.2f} kcal/mol |
-| Torsion Strain | {torsion_strain:.2f} kcal/mol |
-| Angle Strain | {angle_strain:.2f} kcal/mol |
-
-### Electrostatic Properties
-| Property | Value |
-|----------|-------|
-| Dipole Moment | {dipole_moment:.3f} D |
-| Total Charge | {total_charge:.4f} |
-| Max Partial Charge | {max_charge:.4f} |
-| Min Partial Charge | {min_charge:.4f} |
-| Charge Span | {charge_span:.4f} |
-
-### 3D Structure
-| Property | Value |
-|----------|-------|
-| Atoms | {num_atoms_with_h} |
-| Bonds | {len(bonds)} |
-| Coordinate Range X | [{min(coords_x):.3f}, {max(coords_x):.3f}] Å |
-| Coordinate Range Y | [{min(coords_y):.3f}, {max(coords_y):.3f}] Å |
-| Coordinate Range Z | [{min(coords_z):.3f}, {max(coords_z):.3f}] Å |
-
-*Full 3D coordinates available in JSON output below.*
-"""
-
-        # JSON output for developers
-        json_output = json.dumps(
-            {
-                "success": True,
-                "smiles": smiles,
-                "force_field": force_field,
-                "properties": {
-                    "molecular_weight": round(molecular_weight, 2),
-                    "num_atoms_with_h": num_atoms_with_h,
-                    "num_heavy_atoms": num_heavy_atoms,
-                    "radius_of_gyration": round(rg, 3),
-                    "asphericity": round(asphericity, 3),
-                    "eccentricity": round(eccentricity, 3),
-                    "span_r": round(span_r, 3),
-                    "sasa": round(sasa, 2),
-                    "molecular_volume": round(mol_volume, 2),
-                    "globularity": round(globularity, 3),
-                    "surface_to_volume_ratio": round(surface_to_volume, 3),
-                    "conformer_energy": round(conformer_energy, 2),
-                    "vdw_energy": round(vdw_energy, 2),
-                    "electrostatic_energy": round(electrostatic_energy, 2),
-                    "torsion_strain": round(torsion_strain, 2),
-                    "angle_strain": round(angle_strain, 2),
-                    "dipole_moment": round(dipole_moment, 3),
-                    "total_charge": round(total_charge, 4),
-                    "max_partial_charge": round(max_charge, 4),
-                    "min_partial_charge": round(min_charge, 4),
-                    "charge_span": round(charge_span, 4),
-                },
-                "structure_3d": {
-                    "atom_types": atom_types,
-                    "coords_x": coords_x,
-                    "coords_y": coords_y,
-                    "coords_z": coords_z,
-                    "bonds": bonds,
-                    "num_atoms": num_atoms_with_h,
-                    "num_bonds": len(bonds),
-                },
-            },
-            indent=2,
-        )
-
-        return img, properties_md, json_output, ""
-
-    except Exception as e:
-        return None, f"Error processing molecule: {str(e)}", "", str(e)
+    Args:
+        smiles: The molecule as a SMILES string, e.g. "CCO".
+        output_format: "markdown" (default), "html" (with a 2D depiction), or "json".
+    """
+    return generate_report(smiles, fmt=output_format)
 
 
 # Create Gradio interface
-with gr.Blocks(title="NovoMD - Molecular Dynamics API") as demo:
+with gr.Blocks(title="NovoMD - Molecular Property Calculator") as demo:
 
-    gr.Markdown("""
-    # NovoMD - Molecular Dynamics API
+    gr.Markdown(f"""
+    # NovoMD - Molecular Property Calculator
 
-    Calculate 32+ molecular properties from SMILES strings using real 3D coordinate optimization.
+    Calculate 32+ molecular properties and drug-likeness from SMILES strings,
+    powered by the open-source [`novomd`](https://pypi.org/project/novomd/)
+    package (v{__version__}).
 
-    **Features:** Geometry analysis, energy calculations, electrostatic properties, surface/volume metrics, and more.
+    This describes molecules with public cheminformatics. It does not predict
+    ADMET, pKa, solubility, or binding. For that, see NovoMCP.
 
-    [GitHub](https://github.com/realariharrison/NovoMD) | [API Documentation](https://github.com/realariharrison/NovoMD#api-usage)
+    [GitHub](https://github.com/realariharrison/NovoMD) | [PyPI](https://pypi.org/project/novomd/)
     """)
 
     with gr.Row():
@@ -330,33 +226,40 @@ with gr.Blocks(title="NovoMD - Molecular Dynamics API") as demo:
                 visible=False,
             )
 
-    # Handle submission
+    # UI events. show_api=False keeps these image-returning handlers out of the
+    # MCP/API surface; the clean agent tools are registered via gr.api below.
     submit_btn.click(
         fn=process_molecule,
         inputs=[smiles_input, force_field_dropdown],
         outputs=[molecule_image, properties_output, json_output, error_output],
+        show_api=False,
     )
 
     smiles_input.submit(
         fn=process_molecule,
         inputs=[smiles_input, force_field_dropdown],
         outputs=[molecule_image, properties_output, json_output, error_output],
+        show_api=False,
     )
+
+    # MCP tools (also callable as REST endpoints).
+    gr.api(molecular_properties, api_name="molecular_properties")
+    gr.api(drug_likeness, api_name="drug_likeness")
+    gr.api(molecular_report, api_name="molecular_report")
 
     gr.Markdown("""
     ---
 
     **About NovoMD**
 
-    NovoMD is an open-source REST API for molecular dynamics simulations and computational chemistry.
-    This demo showcases the property calculation capabilities. For full API access including PDB/OpenMD
-    file generation, deploy the Docker container:
+    NovoMD is an open-source, local-first molecular property calculator.
+    Install it with `pip install novomd`, or run the REST service:
 
     ```bash
     docker run -d -p 8010:8010 -e NOVOMD_API_KEY="your-key" ghcr.io/realariharrison/novomd:latest
     ```
 
-    MIT License | Built with FastAPI, RDKit, and Gradio
+    MIT License | Built with RDKit and Gradio
     """)
 
 
