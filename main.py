@@ -1,7 +1,7 @@
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +13,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 # Molecular property core (framework-free, shared with the `novomd` library)
+from novomd.batch import MAX_BATCH_SIZE, calculate_properties_batch
 from novomd.conversion import get_atom_type, pdb_to_omd
 from novomd.core import (
     RDKIT_AVAILABLE,
@@ -277,6 +278,55 @@ async def convert_smiles_to_omd(
     except Exception as e:
         logger.error(f"SMILES to OMD conversion failed: {str(e)}")
         return OMDFileResponse(success=False, error=str(e), metadata={"smiles": data.smiles})
+
+
+class BatchRequest(BaseModel):
+    molecules: List[str] = Field(..., description="List of SMILES strings to process")
+    optimize_3d: bool = Field(default=True, description="Optimize 3D structure")
+    add_hydrogens: bool = Field(default=True, description="Add explicit hydrogens")
+    force_field: str = Field(
+        default="AMBER",
+        description="Force field label echoed in the response; property values "
+        "are conformer-derived and force-field-independent.",
+    )
+
+
+@app.post("/batch")
+@limiter.limit(settings.rate_limit)
+async def batch_properties(
+    request: Request, data: BatchRequest, api_key: str = Depends(verify_api_key)
+):
+    """
+    Calculate molecular properties for a list of SMILES in one request.
+
+    Per-item error isolation: a single malformed SMILES does not fail the
+    batch. Each result is either
+    ``{"smiles": ..., "status": "ok", "properties": {...}}`` or
+    ``{"smiles": ..., "status": "error", "error": "<message>"}``.
+    """
+    if not data.molecules:
+        raise HTTPException(status_code=400, detail="No molecules provided")
+
+    if len(data.molecules) > MAX_BATCH_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Batch size {len(data.molecules)} exceeds the maximum of {MAX_BATCH_SIZE}",
+        )
+
+    results = calculate_properties_batch(
+        data.molecules,
+        add_hydrogens=data.add_hydrogens,
+        optimize_3d=data.optimize_3d,
+    )
+    succeeded = sum(1 for r in results if r["status"] == "ok")
+
+    return {
+        "count": len(results),
+        "succeeded": succeeded,
+        "failed": len(results) - succeeded,
+        "force_field": data.force_field,
+        "results": results,
+    }
 
 
 class Atom2MDRequest(BaseModel):
