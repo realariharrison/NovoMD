@@ -1,0 +1,45 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- NovoMD release card. Japandi palette: terracotta #B8704B, cream #F8F6F3,
+       charcoal #2D2A26. Display: Cormorant Garamond. Body: Inter. Data: JetBrains Mono.
+       No border-radius. -->
+  <rect width="1200" height="630" fill="#F8F6F3"/>
+
+  <!-- top accent bar -->
+  <rect x="0" y="0" width="1200" height="10" fill="#B8704B"/>
+
+  <!-- kicker -->
+  <text x="90" y="118" font-family="JetBrains Mono, monospace" font-size="22"
+        letter-spacing="6" fill="#B8704B">MOLECULAR PROPERTY CALCULATOR</text>
+
+  <!-- wordmark -->
+  <text x="86" y="246" font-family="Cormorant Garamond, Georgia, serif" font-weight="600"
+        font-size="132" fill="#2D2A26">NovoMD</text>
+
+  <!-- subhead -->
+  <text x="90" y="306" font-family="Inter, Arial, sans-serif" font-weight="400"
+        font-size="32" fill="#2D2A26">local-first molecular descriptors from SMILES, on your own hardware.</text>
+
+  <!-- rule -->
+  <rect x="90" y="356" width="1020" height="2" fill="#B8704B"/>
+
+  <!-- stat row -->
+  <g font-family="JetBrains Mono, monospace" font-weight="600" font-size="62" fill="#2D2A26">
+    <text x="90" y="468">32+</text>
+    <text x="370" y="468">1,000</text>
+    <text x="700" y="468">0</text>
+    <text x="900" y="468">MIT</text>
+  </g>
+  <g font-family="Inter, Arial, sans-serif" font-weight="500" font-size="23" fill="#6B645C">
+    <text x="92" y="506">descriptors</text>
+    <text x="372" y="506">molecules per batch</text>
+    <text x="702" y="506">API keys</text>
+    <text x="902" y="506">licensed</text>
+  </g>
+
+  <!-- footer -->
+  <rect x="90" y="556" width="1020" height="2" fill="#E4DED6"/>
+  <text x="90" y="600" font-family="JetBrains Mono, monospace" font-weight="500" font-size="30"
+        fill="#B8704B">pip install novomd</text>
+  <text x="1110" y="600" text-anchor="end" font-family="Inter, Arial, sans-serif"
+        font-weight="400" font-size="23" fill="#6B645C">open source &#183; novomcp.com</text>
+</svg>
