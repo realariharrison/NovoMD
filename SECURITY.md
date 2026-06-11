@@ -22,7 +22,7 @@ Instead, please report security issues via one of these methods:
    - Provide detailed information about the vulnerability
 
 2. **Email**
-   - Send details to: security@quantnexusai.com
+   - Send details to: security@novomcp.com
    - Use GPG encryption if possible (key available on request)
 
 ### What to Include
@@ -126,7 +126,7 @@ Subscribe to security advisories:
 
 ## Contact
 
-For security-related questions: security@quantnexusai.com
+For security-related questions: security@novomcp.com
 
 ---
 
