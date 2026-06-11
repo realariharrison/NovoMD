@@ -12,6 +12,7 @@ The same core powers the optional REST service (``pip install novomd[server]``).
 from __future__ import annotations
 
 from .__about__ import __version__
+from .batch import MAX_BATCH_SIZE, calculate_properties_batch
 from .conversion import get_atom_type, pdb_to_omd
 from .core import (
     RDKIT_AVAILABLE,
@@ -27,6 +28,8 @@ __all__ = [
     "__version__",
     "RDKIT_AVAILABLE",
     "calculate_properties",
+    "calculate_properties_batch",
+    "MAX_BATCH_SIZE",
     "calculate_all_molecular_properties",
     "calculate_partial_charges",
     "extract_coordinates_from_pdb",

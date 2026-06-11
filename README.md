@@ -49,11 +49,25 @@ print(props["molecular_weight"])   # 46.07
 print(props["radius_of_gyration"])
 ```
 
+Process a list in one call. A bad SMILES does not stop the batch; each item carries its own status:
+
+```python
+from novomd import calculate_properties_batch
+
+results = calculate_properties_batch(["CCO", "CC(=O)O", "NOT_VALID"])
+for item in results:
+    if item["status"] == "ok":
+        print(item["smiles"], item["properties"]["molecular_weight"])
+    else:
+        print(item["smiles"], "->", item["error"])
+```
+
 From the command line:
 
 ```bash
 novomd props "CCO"
 novomd props "CC(=O)OC1=CC=CC=C1C(=O)O" --compact
+novomd batch molecules.smi --out results.csv
 ```
 
 RDKit, NumPy, and SciPy install automatically as dependencies. The calculation runs entirely on your hardware.
@@ -234,9 +248,36 @@ See the [`examples/`](examples/) directory for interactive tutorials:
 | `/health` | GET | Health check (no auth required) |
 | `/status` | GET | Service status and capabilities |
 | `/smiles-to-omd` | POST | Convert SMILES to OpenMD with 32+ properties |
+| `/batch` | POST | Calculate properties for many SMILES in one call |
 | `/atom2md` | POST | Convert PDB to OpenMD format |
 | `/force-fields` | GET | List available force fields |
 | `/force-field-types/{ff}` | GET | Get atom types for force field |
+
+### Batch endpoint
+
+Process a list of SMILES in a single request. One bad SMILES does not fail the batch; each item carries its own status.
+
+```bash
+curl -X POST http://localhost:8010/batch \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{"molecules": ["CCO", "CC(=O)O", "NOT_VALID"]}'
+```
+
+```json
+{
+  "count": 3,
+  "succeeded": 2,
+  "failed": 1,
+  "results": [
+    {"smiles": "CCO", "status": "ok", "properties": {"molecular_weight": 46.07, "...": "..."}},
+    {"smiles": "CC(=O)O", "status": "ok", "properties": {"...": "..."}},
+    {"smiles": "NOT_VALID", "status": "error", "error": "Invalid SMILES string: 'NOT_VALID'"}
+  ]
+}
+```
+
+Batches are capped at 1,000 molecules per request and share the service rate limit.
 
 ## Supported Force Fields
 
