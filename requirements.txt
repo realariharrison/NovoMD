@@ -1,14 +1,16 @@
+# Server runtime dependencies for the NovoMD REST service (Docker / uvicorn).
+# For the library alone, prefer: pip install novomd
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 pydantic==2.5.0
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
-numpy>=1.24.3,<2.0.0
-scipy>=1.11.4
-biopython>=1.81
 slowapi==0.1.9
 
-# RDKit and OpenBabel - install separately due to complex dependencies
-# See installation instructions in README.md
-# rdkit-pypi==2022.9.5
-# openbabel (install via conda or system package manager)
+# Molecular property core
+numpy>=1.24.3,<2.0.0
+scipy>=1.11.4
+rdkit>=2023.3.1
+
+# OpenBabel is optional (extra conversion features); install via conda or
+# system package manager if needed.

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "novomd"
-version = "1.1.0"
-description = "Open-source REST API for molecular dynamics and computational chemistry"
+dynamic = ["version"]
+description = "Local-first molecular property calculator. Compute descriptors from SMILES with no server and no API key."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
@@ -15,11 +15,12 @@ authors = [
 keywords = [
     "molecular-dynamics",
     "computational-chemistry",
-    "api",
-    "fastapi",
+    "cheminformatics",
+    "molecular-descriptors",
     "smiles",
     "openmd",
     "rdkit",
+    "local-first",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -36,19 +37,23 @@ classifiers = [
     "Framework :: FastAPI",
 ]
 
+# Core dependencies: a bare `pip install novomd` is a working local calculator.
 dependencies = [
+    "numpy>=1.24.0,<2.0.0",
+    "scipy>=1.11.0",
+    "rdkit>=2023.3.1",
+]
+
+[project.optional-dependencies]
+# REST service: `pip install novomd[server]`
+server = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
     "python-dotenv>=1.0.0",
-    "numpy>=1.24.0,<2.0.0",
-    "scipy>=1.11.0",
-    "biopython>=1.81",
     "slowapi>=0.1.9",
 ]
-
-[project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
@@ -62,9 +67,6 @@ dev = [
     "safety>=2.3.0",
     "pre-commit>=3.4.0",
 ]
-rdkit = [
-    "rdkit-pypi>=2022.9.0",
-]
 
 [project.urls]
 Homepage = "https://github.com/quantnexusai/NovoMD"
@@ -73,11 +75,14 @@ Repository = "https://github.com/quantnexusai/NovoMD.git"
 Issues = "https://github.com/quantnexusai/NovoMD/issues"
 
 [project.scripts]
-novomd = "main:run_server"
+novomd = "novomd.cli:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "novomd.__about__.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["*"]
+include = ["novomd*"]
 exclude = ["tests*"]
 
 [tool.black]
@@ -108,6 +113,14 @@ warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 no_strict_optional = true
+
+# RDKit ships type stubs that some mypy versions cannot parse; treat it as
+# untyped rather than analyzing its stub files.
+[[tool.mypy.overrides]]
+module = "rdkit.*"
+follow_imports = "skip"
+follow_imports_for_stubs = true
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

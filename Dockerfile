@@ -9,15 +9,12 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
+# Copy requirements and install Python dependencies (includes rdkit, numpy, scipy)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Try to install rdkit-pypi (optional - service will run without it)
-RUN pip install --no-cache-dir rdkit-pypi==2022.9.5 || \
-    echo "⚠️  RDKit installation failed - some features will be limited"
-
-# Copy application code
+# Copy application code: the framework-free core package plus the service modules
+COPY novomd ./novomd
 COPY main.py config.py auth.py ./
 
 # Create non-root user for security
