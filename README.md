@@ -76,6 +76,8 @@ Add it as a custom connector in Claude (Settings, then Integrations), or point a
 
 The endpoint works with Claude (web and desktop), Cursor, Continue.dev, and any client that speaks the [MCP specification](https://modelcontextprotocol.io/).
 
+For agents that run the package locally, a drop-in [agent skill](skills/) teaches the assistant when to use NovoMD, how to read its output, and the boundary it must not cross (no ADMET, pKa, or binding claims).
+
 ### REST service (Docker)
 
 For networked or containerized use, run the same core behind FastAPI.
