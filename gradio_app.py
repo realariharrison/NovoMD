@@ -226,20 +226,20 @@ with gr.Blocks(title="NovoMD - Molecular Property Calculator") as demo:
                 visible=False,
             )
 
-    # UI events. show_api=False keeps these image-returning handlers out of the
+    # UI events. api_visibility="private" keeps these image-returning handlers out of the
     # MCP/API surface; the clean agent tools are registered via gr.api below.
     submit_btn.click(
         fn=process_molecule,
         inputs=[smiles_input, force_field_dropdown],
         outputs=[molecule_image, properties_output, json_output, error_output],
-        show_api=False,
+        api_visibility="private",
     )
 
     smiles_input.submit(
         fn=process_molecule,
         inputs=[smiles_input, force_field_dropdown],
         outputs=[molecule_image, properties_output, json_output, error_output],
-        show_api=False,
+        api_visibility="private",
     )
 
     # MCP tools (also callable as REST endpoints).
