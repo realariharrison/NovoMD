@@ -1,6 +1,6 @@
 # Requirements for Hugging Face Spaces deployment.
-# The Dockerfile installs these (rdkit/numpy/scipy via conda); this file is the
-# source of truth for the Python deps.
+# The Dockerfile installs these with pip (rdkit/numpy/scipy ship wheels); this
+# file is the source of truth for the Python deps.
 gradio[mcp]>=5.32.0
 novomd>=1.4.0
 rdkit>=2023.9.1
