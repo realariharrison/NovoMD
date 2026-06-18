@@ -21,6 +21,10 @@ def calculate_properties_batch(
     *,
     add_hydrogens: bool = True,
     optimize_3d: bool = True,
+    conformers: Optional[int] = None,
+    ensemble_preset: str = "ensemble",
+    temperature: float = 298.15,
+    strict_ensemble: bool = False,
     max_batch_size: Optional[int] = MAX_BATCH_SIZE,
 ) -> List[Dict[str, Any]]:
     """Compute descriptors for many SMILES, isolating per-item failures.
@@ -47,7 +51,13 @@ def calculate_properties_batch(
     for smiles in smiles_list:
         try:
             properties = calculate_properties(
-                smiles, add_hydrogens=add_hydrogens, optimize_3d=optimize_3d
+                smiles,
+                add_hydrogens=add_hydrogens,
+                optimize_3d=optimize_3d,
+                conformers=conformers,
+                ensemble_preset=ensemble_preset,
+                temperature=temperature,
+                strict_ensemble=strict_ensemble,
             )
             results.append({"smiles": smiles, "status": "ok", "properties": properties})
         except Exception as exc:  # noqa: BLE001 - one bad molecule must not kill the batch

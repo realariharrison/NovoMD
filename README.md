@@ -126,6 +126,25 @@ calculate_properties_batch(["CCO", "C"], max_batch_size=1000)
 
 Both raise `InvalidSMILESError` for unparseable input and `RDKitNotAvailableError` if RDKit is missing. The batch function isolates per-item failures instead of raising.
 
+## Conformer ensembles (optional)
+
+By default NovoMD embeds a single conformer. For ensemble-averaged descriptors, install the optional extra:
+
+```bash
+pip install 'novomd[ensemble]'   # requires Python 3.12+
+```
+
+```python
+from novomd import calculate_properties
+
+props = calculate_properties("CCCCc1ccccc1OCCO", conformers=50)
+print(props["method"])                          # "openconf_ensemble"
+print(props["n_conformers"])
+print(props["conformational_flexibility_rgyr"]) # ensemble spread of R_gyr
+```
+
+Geometries come from [openconf](https://github.com/rowansci/openconf) (MIT, by the Rowan team). NovoMD uses openconf's conformers and Boltzmann weights, then computes its descriptors as a population average. Conformer-dependent values (shape, span, dipole) are Boltzmann-weighted; structural fields come from the lowest-energy conformer. If the extra is not installed, NovoMD falls back to the single-conformer calculation: no error, still local, still no account.
+
 ## Interpretation
 
 Beyond raw numbers, NovoMD reads a molecule's profile: the standard medicinal-chemistry descriptors and the textbook rule-of-thumb checks, with a plain-language summary.

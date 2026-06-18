@@ -10,15 +10,14 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
-    {name = "NovoMCP"}
+    {name = "NovoMCP", email = "ari@novomcp.com"}
 ]
 keywords = [
-    "molecular-dynamics",
     "computational-chemistry",
     "cheminformatics",
     "molecular-descriptors",
+    "conformer-ensembles",
     "smiles",
-    "openmd",
     "rdkit",
     "local-first",
 ]
@@ -38,8 +37,10 @@ classifiers = [
 ]
 
 # Core dependencies: a bare `pip install novomd` is a working local calculator.
+# numpy is uncapped (>=1.24) so the optional [ensemble] extra can resolve:
+# openconf's transitive dep prism-pruner requires numpy>=2.
 dependencies = [
-    "numpy>=1.24.0,<2.0.0",
+    "numpy>=1.24.0",
     "scipy>=1.11.0",
     "rdkit>=2023.3.1",
 ]
@@ -53,6 +54,11 @@ server = [
     "pydantic-settings>=2.1.0",
     "python-dotenv>=1.0.0",
     "slowapi>=0.1.9",
+]
+# Conformer ensembles via openconf (MIT, https://github.com/rowansci/openconf).
+# pip install 'novomd[ensemble]'  — requires Python 3.12+; base install stays 3.10+.
+ensemble = [
+    "openconf>=0.0.16; python_version >= '3.12'",
 ]
 dev = [
     "pytest>=7.4.0",

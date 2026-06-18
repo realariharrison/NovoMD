@@ -22,6 +22,12 @@ from .core import (
     extract_coordinates_from_pdb,
     smiles_to_pdb,
 )
+from .ensemble import (
+    OPENCONF_AVAILABLE,
+    EnsembleUnavailableError,
+    ensemble_available,
+    generate_ensemble,
+)
 from .exceptions import InvalidSMILESError, NovoMDError, RDKitNotAvailableError
 from .interpret import calculate_druglikeness, interpret, summarize
 from .report import generate_report
@@ -32,6 +38,10 @@ __all__ = [
     "calculate_properties",
     "calculate_properties_batch",
     "MAX_BATCH_SIZE",
+    "OPENCONF_AVAILABLE",
+    "ensemble_available",
+    "generate_ensemble",
+    "EnsembleUnavailableError",
     "calculate_druglikeness",
     "summarize",
     "interpret",
