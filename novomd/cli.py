@@ -71,10 +71,20 @@ def _cmd_props(args: argparse.Namespace) -> int:
             args.smiles,
             add_hydrogens=not args.no_hydrogens,
             optimize_3d=not args.no_optimize,
+            conformers=args.conformers,
+            ensemble_preset=args.preset,
         )
     except NovoMDError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+
+    # Note when an ensemble was requested but the run fell back to single-conformer.
+    if args.conformers and args.conformers > 1 and result.get("method") != "openconf_ensemble":
+        print(
+            "note: openconf unavailable; computed a single conformer. "
+            "Install with: pip install 'novomd[ensemble]' (Python 3.12+).",
+            file=sys.stderr,
+        )
 
     indent = None if args.compact else 2
     print(json.dumps(result, indent=indent))
@@ -236,6 +246,20 @@ def build_parser() -> argparse.ArgumentParser:
     props.add_argument("smiles", help="SMILES string, e.g. 'CCO'")
     props.add_argument("--no-hydrogens", action="store_true", help="Do not add explicit hydrogens.")
     props.add_argument("--no-optimize", action="store_true", help="Skip 3D geometry optimization.")
+    props.add_argument(
+        "--conformers",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Average over an openconf ensemble of up to N conformers "
+        "(requires the [ensemble] extra; falls back to single conformer).",
+    )
+    props.add_argument(
+        "--preset",
+        default="ensemble",
+        choices=["rapid", "ensemble", "spectroscopic", "docking", "analogue", "macrocycle"],
+        help="openconf preset for ensemble mode (default: ensemble).",
+    )
     props.add_argument(
         "--compact", action="store_true", help="Emit single-line JSON instead of indented."
     )

@@ -245,27 +245,115 @@ def calculate_all_molecular_properties(
     }
 
 
+def _calculate_properties_ensemble(
+    smiles: str, *, max_conformers: int, preset: str, temperature: float
+) -> Dict[str, Any]:
+    """Compute Boltzmann-weighted, ensemble-averaged descriptors via openconf.
+
+    Reuses :func:`calculate_all_molecular_properties` per conformer, then
+    combines: numeric scalars are Boltzmann-weighted across the ensemble;
+    structural fields (coords, bonds, atom_types) are taken from the
+    lowest-energy conformer. Adds real ensemble metadata from openconf.
+    """
+    from .ensemble import generate_ensemble  # lazy: keeps openconf optional
+
+    raw = generate_ensemble(
+        smiles, max_conformers=max_conformers, preset=preset, temperature=temperature
+    )
+
+    per_conf = [
+        calculate_all_molecular_properties(raw.coords[i], raw.atoms, None, raw.pdb_blocks[i])
+        for i in range(raw.n_conformers)
+    ]
+
+    # Normalize weights; fall back to uniform if degenerate.
+    weights = raw.weights
+    if weights.size != raw.n_conformers or weights.sum() <= 0 or not np.isfinite(weights).all():
+        weights = np.ones(raw.n_conformers) / raw.n_conformers
+    else:
+        weights = weights / weights.sum()
+
+    rep_idx = int(np.argmin(raw.energies)) if raw.energies else 0
+    rep = per_conf[rep_idx]
+
+    merged: Dict[str, Any] = {}
+    for key, rep_val in rep.items():
+        if isinstance(rep_val, bool):
+            merged[key] = rep_val
+        elif isinstance(rep_val, int):
+            # count-like field: average then round to int (identical across confs)
+            vals = np.array([float(pc[key]) for pc in per_conf])
+            merged[key] = int(round(float(np.dot(weights, vals))))
+        elif isinstance(rep_val, float):
+            vals = np.array([float(pc[key]) for pc in per_conf])
+            merged[key] = round(float(np.dot(weights, vals)), 4)
+        else:
+            # lists / strings (coords_*, atom_types, bonds): take representative
+            merged[key] = rep_val
+
+    # Real ensemble metadata (sourced from openconf, not placeholders).
+    rgyr = np.array([float(pc["radius_of_gyration"]) for pc in per_conf])
+    rgyr_mean = float(np.dot(weights, rgyr))
+    rgyr_std = float(np.sqrt(max(0.0, np.dot(weights, (rgyr - rgyr_mean) ** 2))))
+
+    energies = np.array(raw.energies, dtype=float)
+    finite = energies[np.isfinite(energies)]
+
+    merged.update(
+        {
+            "n_conformers": int(raw.n_conformers),
+            "ensemble_energy_min_kcal": round(float(finite.min()), 3) if finite.size else None,
+            "ensemble_energy_spread_kcal": (
+                round(float(finite.max() - finite.min()), 3) if finite.size else None
+            ),
+            "conformational_flexibility_rgyr": round(rgyr_std, 4),
+            "method": "openconf_ensemble",
+        }
+    )
+    return merged
+
+
 def calculate_properties(
-    smiles: str, *, add_hydrogens: bool = True, optimize_3d: bool = True
+    smiles: str,
+    *,
+    add_hydrogens: bool = True,
+    optimize_3d: bool = True,
+    conformers: int | None = None,
+    ensemble_preset: str = "ensemble",
+    temperature: float = 298.15,
+    strict_ensemble: bool = False,
 ) -> Dict[str, Any]:
     """Compute the full molecular descriptor set for a SMILES string, locally.
 
-    Parses the SMILES, embeds a 3D conformer, and returns a flat dictionary of
-    identity metadata (molecular weight, atom/bond counts) plus the geometry,
-    energy, electrostatic, surface/volume and visualization descriptors. No
-    network access, no API key, no server.
+    By default this embeds a single conformer (UFF-optimized) and returns the
+    classic descriptor dictionary. Pass ``conformers=N`` (N >= 2) to compute a
+    Boltzmann-weighted ensemble average using openconf; if openconf is not
+    available this falls back to the single-conformer result unless
+    ``strict_ensemble=True``.
 
     Args:
-        smiles: The molecule as a SMILES string (e.g. ``"CCO"``).
-        add_hydrogens: Add explicit hydrogens before embedding (default True).
-        optimize_3d: Run UFF geometry optimization on the conformer (default True).
+        smiles: the molecule as a SMILES string (e.g. ``"CCO"``).
+        add_hydrogens: add explicit hydrogens before embedding (default True).
+        optimize_3d: run UFF optimization on the single conformer (default True;
+            ignored in ensemble mode, where openconf handles minimization).
+        conformers: if >= 2, request an openconf ensemble of up to this many
+            conformers. ``None`` or ``1`` uses the single-conformer path.
+        ensemble_preset: openconf preset for ensemble mode (default "ensemble";
+            use "macrocycle" for large rings).
+        temperature: temperature (K) for Boltzmann weighting in ensemble mode.
+        strict_ensemble: if True, raise instead of falling back when an ensemble
+            was requested but openconf is unavailable.
 
     Returns:
-        A descriptor dictionary keyed by property name.
+        A descriptor dictionary keyed by property name. Always includes
+        ``"method"`` ("single_conformer_uff" or "openconf_ensemble") and
+        ``"n_conformers"``.
 
     Raises:
         RDKitNotAvailableError: RDKit is not installed.
-        InvalidSMILESError: The SMILES string could not be parsed.
+        InvalidSMILESError: the SMILES string could not be parsed.
+        EnsembleUnavailableError: ensemble requested with strict_ensemble=True
+            but openconf is unavailable.
     """
     _require_rdkit()
 
@@ -276,14 +364,41 @@ def calculate_properties(
     if add_hydrogens:
         mol = Chem.AddHs(mol)
 
-    pdb_content = smiles_to_pdb(smiles, optimize_3d=optimize_3d, add_hydrogens=add_hydrogens)
-    coords, atoms = extract_coordinates_from_pdb(pdb_content)
-    properties = calculate_all_molecular_properties(coords, atoms, mol, pdb_content)
-
-    return {
+    identity = {
         "smiles": smiles,
         "num_atoms": mol.GetNumAtoms(),
         "num_bonds": mol.GetNumBonds(),
         "molecular_weight": round(Descriptors.MolWt(mol), 2),
-        **properties,
     }
+
+    want_ensemble = conformers is not None and conformers > 1
+    if want_ensemble:
+        from .ensemble import EnsembleUnavailableError, ensemble_available
+
+        if ensemble_available():
+            try:
+                properties = _calculate_properties_ensemble(
+                    smiles,
+                    max_conformers=int(conformers),
+                    preset=ensemble_preset,
+                    temperature=temperature,
+                )
+                return {**identity, **properties}
+            except Exception:
+                if strict_ensemble:
+                    raise
+                # graceful fallback to the single-conformer path below
+        elif strict_ensemble:
+            raise EnsembleUnavailableError(
+                "Ensemble requested with strict_ensemble=True but openconf is "
+                "unavailable. Install with: pip install 'novomd[ensemble]' "
+                "(requires Python 3.12+)."
+            )
+
+    # --- single-conformer path (unchanged numerics) ---
+    pdb_content = smiles_to_pdb(smiles, optimize_3d=optimize_3d, add_hydrogens=add_hydrogens)
+    coords, atoms = extract_coordinates_from_pdb(pdb_content)
+    properties = calculate_all_molecular_properties(coords, atoms, mol, pdb_content)
+    properties["n_conformers"] = 1
+    properties["method"] = "single_conformer_uff"
+    return {**identity, **properties}

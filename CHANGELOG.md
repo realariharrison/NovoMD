@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-06-18
+
+### Added
+- Optional conformer ensembles via the `[ensemble]` extra (`pip install
+  'novomd[ensemble]'`, Python 3.12+): `calculate_properties(smiles,
+  conformers=N)` returns Boltzmann-weighted, ensemble-averaged descriptors
+  from [openconf](https://github.com/rowansci/openconf), plus ensemble metadata
+  (`n_conformers`, `ensemble_energy_spread_kcal`, `conformational_flexibility_rgyr`).
+  Falls back to the single-conformer path when openconf is unavailable, unless
+  `strict_ensemble=True`. `novomd props --conformers N [--preset ...]`.
+- `method` and `n_conformers` keys on all descriptor output, so callers can
+  tell the single-conformer and ensemble paths apart.
+
+### Changed
+- Base `pip install novomd` adds no new runtime dependency and keeps identical
+  numerics on the single-conformer path.
+- Relaxed the numpy pin from `>=1.24,<2.0` to `>=1.24` (numpy 2 is now allowed
+  and tested). This is required for the `[ensemble]` extra to resolve, since
+  openconf's transitive dependency prism-pruner requires numpy>=2. The server
+  manifest (`requirements.txt`) stays pinned to numpy<2.
+- Cleanup: LICENSE copyright holder (Quant NexusAI Inc.), package author email,
+  and keyword list (dropped `openmd`/`molecular-dynamics`, added
+  `conformer-ensembles`).
+
 ## [1.4.0] - 2026-06-11
 
 ### Added
@@ -105,7 +129,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BioPython 1.81
 - Optional: RDKit, OpenBabel
 
-[Unreleased]: https://github.com/realariharrison/NovoMD/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/realariharrison/NovoMD/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/realariharrison/NovoMD/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/realariharrison/NovoMD/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/realariharrison/NovoMD/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/realariharrison/NovoMD/compare/v1.2.0...v1.2.1
