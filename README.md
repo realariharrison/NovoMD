@@ -110,7 +110,7 @@ uvicorn main:app --host 0.0.0.0 --port 8010
 - **Atom counts** (2): total atoms, heavy atoms
 - **Visualization** (5+): full atomic coordinates, atom types, bond connectivity
 
-Energy values are estimates from the conformer, not from a force-field simulation. The descriptors are derived from real 3D coordinates, not mocked.
+Energy values are estimates from the conformer, not from a force-field simulation. The descriptors are derived from real 3D coordinates, not mocked. [SCIENCE.md](SCIENCE.md) documents the method and is honest about which fields are real geometry and which are deterministic estimates; [docs/benchmark_report.md](docs/benchmark_report.md) is a reproducible, offline, single-core benchmark, and the determinism guarantee (same SMILES, identical descriptors, any machine) holds regardless of hardware.
 
 ## Library reference
 
