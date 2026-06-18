@@ -57,8 +57,12 @@ server = [
 ]
 # Conformer ensembles via openconf (MIT, https://github.com/rowansci/openconf).
 # pip install 'novomd[ensemble]'  — requires Python 3.12+; base install stays 3.10+.
+# Both are capped: openconf is v0.0.x (churny), and its transitive dep
+# prism-pruner is what forces numpy>=2 — a 0.2 of either could break resolution
+# with zero change on our side. Known-good: openconf 0.0.16 + prism-pruner 0.1.x.
 ensemble = [
-    "openconf>=0.0.16; python_version >= '3.12'",
+    "openconf>=0.0.16,<0.1; python_version >= '3.12'",
+    "prism-pruner>=0.1.2,<0.2; python_version >= '3.12'",
 ]
 dev = [
     "pytest>=7.4.0",

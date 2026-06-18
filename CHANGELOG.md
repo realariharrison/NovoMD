@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-06-18
+
+### Changed
+- Hardened the `[ensemble]` extra against transitive-dependency churn: capped
+  `openconf>=0.0.16,<0.1` and its transitive dep `prism-pruner>=0.1.2,<0.2`.
+  openconf is an early v0.0.x package and prism-pruner's numpy floor moved
+  under us once already; the caps stop a future release from silently breaking
+  `pip install 'novomd[ensemble]'`. Known-good: openconf 0.0.16 + prism-pruner 0.1.x.
+
 ## [1.5.0] - 2026-06-18
 
 ### Added
@@ -129,7 +138,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BioPython 1.81
 - Optional: RDKit, OpenBabel
 
-[Unreleased]: https://github.com/realariharrison/NovoMD/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/realariharrison/NovoMD/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/realariharrison/NovoMD/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/realariharrison/NovoMD/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/realariharrison/NovoMD/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/realariharrison/NovoMD/compare/v1.2.1...v1.3.0
